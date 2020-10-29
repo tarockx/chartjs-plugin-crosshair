@@ -3,17 +3,20 @@ export default function(Chart) {
 
 	var defaultOptions = {
 		line: {
+			enabled: false,
 			color: '#F66',
 			width: 1,
-			dashPattern: []
+			dashPattern: [],
+			drawHorizontal: true,
+			drawVertical: true
 		},
 		sync: {
-			enabled: true,
+			enabled: false,
 			group: 1,
 			suppressTooltips: false
 		},
 		zoom: {
-			enabled: true,
+			enabled: false,
 			zoomboxBackgroundColor: 'rgba(66,133,244,0.2)',
 			zoomboxBorderColor: '#48F',
 			zoomButtonText: 'Reset Zoom',
@@ -36,9 +39,8 @@ export default function(Chart) {
 		id: 'crosshair',
 
 		afterInit: function(chart) {
-
 			if (chart.config.options.scales.xAxes.length == 0) {
-				return
+				return;
 			}
 
 
@@ -240,14 +242,13 @@ export default function(Chart) {
 			}
 
 			chart.crosshair.x = e.x;
-
+			chart.crosshair.y = e.y;
 
 			chart.draw();
 
 		},
 
 		afterDraw: function(chart) {
-
 			if (!chart.crosshair.enabled) {
 				return;
 			}
@@ -461,29 +462,58 @@ export default function(Chart) {
 		},
 
 		drawTraceLine: function(chart) {
+			if(this.getOption(chart, 'line', 'enabled')){
+				if (this.getOption(chart, 'line', 'drawVertical')){
+					var yScale = this.getYScale(chart);
+		
+					var lineWidth = this.getOption(chart, 'line', 'width');
+					var color = this.getOption(chart, 'line', 'color');
+					var dashPattern = this.getOption(chart, 'line', 'dashPattern');
+					var snapEnabled = this.getOption(chart, 'snap', 'enabled');
+		
+					var lineX = chart.crosshair.x;
+					var isHoverIntersectOff = chart.config.options.hover.intersect === false;
+		
+					if (snapEnabled && isHoverIntersectOff && chart.active.length) {
+						lineX = chart.active[0]._view.x;
+					}
+		
+					chart.ctx.beginPath();
+					chart.ctx.setLineDash(dashPattern);
+					chart.ctx.moveTo(lineX, yScale.getPixelForValue(yScale.max));
+					chart.ctx.lineWidth = lineWidth;
+					chart.ctx.strokeStyle = color;
+					chart.ctx.lineTo(lineX, yScale.getPixelForValue(yScale.min));
+					chart.ctx.stroke();
+					chart.ctx.setLineDash([]);
+				}
 
-			var yScale = this.getYScale(chart);
-
-			var lineWidth = this.getOption(chart, 'line', 'width');
-			var color = this.getOption(chart, 'line', 'color');
-			var dashPattern = this.getOption(chart, 'line', 'dashPattern');
-			var snapEnabled = this.getOption(chart, 'snap', 'enabled');
-
-			var lineX = chart.crosshair.x;
-			var isHoverIntersectOff = chart.config.options.hover.intersect === false;
-
-			if (snapEnabled && isHoverIntersectOff && chart.active.length) {
-				lineX = chart.active[0]._view.x;
+				if (this.getOption(chart, 'line', 'drawHorizontal')){
+					var xScale = this.getXScale(chart);
+		
+					var lineWidth = this.getOption(chart, 'line', 'width');
+					var color = this.getOption(chart, 'line', 'color');
+					var dashPattern = this.getOption(chart, 'line', 'dashPattern');
+					var snapEnabled = this.getOption(chart, 'snap', 'enabled');
+		
+					var lineY = chart.crosshair.y;
+					var isHoverIntersectOff = chart.config.options.hover.intersect === false;
+		
+					if (snapEnabled && isHoverIntersectOff && chart.active.length) {
+						lineY = chart.active[0]._view.y;
+					}
+		
+					chart.ctx.beginPath();
+					chart.ctx.setLineDash(dashPattern);
+					chart.ctx.moveTo(xScale.getPixelForValue(xScale.min), lineY);
+					chart.ctx.lineWidth = lineWidth;
+					chart.ctx.strokeStyle = color;
+					chart.ctx.lineTo(xScale.getPixelForValue(xScale.max), lineY);
+					chart.ctx.stroke();
+					chart.ctx.setLineDash([]);
+				}				
 			}
 
-			chart.ctx.beginPath();
-			chart.ctx.setLineDash(dashPattern);
-			chart.ctx.moveTo(lineX, yScale.getPixelForValue(yScale.max));
-			chart.ctx.lineWidth = lineWidth;
-			chart.ctx.strokeStyle = color;
-			chart.ctx.lineTo(lineX, yScale.getPixelForValue(yScale.min));
-			chart.ctx.stroke();
-			chart.ctx.setLineDash([]);
 
 		},
 
